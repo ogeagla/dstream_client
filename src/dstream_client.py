@@ -228,21 +228,37 @@ def run_clusterer(x, y, out_dir, total_plots = 10, needs_scale=True):
     
     
     
-def run_emulated_data():
+def run_emulated_data(out_dir):
     metricDataMatrix, columnNamesVector, timesVector = Utils.get_emu_data()
     
 
-def run_boa2_data():
+def run_boa2_data(out_dir):
     allMEIds, perMEData, perMEMetricNames, perMETimes = Utils.get_boa2_data()
     MEId_of_interest = '536282'
     
     run_index = allMEIds.index(MEId_of_interest)
     run_data = perMEData[run_index]
     run_names = perMEMetricNames[run_index]
-    run_times = perMETimes[run_index]
+    times = perMETimes[run_index]
     
+    metric_index = 4
+    load_index = 29
+    #print run_data.shape, run_data
+    #print run_names.shape, run_names
     
-def run_test(out_dir):
+    metric_data, load_data = run_data[:,metric_index], run_data[:,load_index]
+    
+    metric_name, load_name = run_names[metric_index], run_names[load_index]    
+    
+    load_data, metric_data, times = Utils.sanitize_data(load_data, metric_data, times)
+    
+    print 'size of {} is {}, size of {} is {} (load)'.format(metric_name, metric_data.size, load_name, load_data.size)
+    
+    Utils.show_scatter(load_data, metric_data, 'boa2 data')
+    
+    run_clusterer(load_data, metric_data, out_dir, 20, True)
+    
+def run_test_data(out_dir):
     means_count = 3
     test_data_size = 20000
     display_times = 1
@@ -292,19 +308,19 @@ def run_test(out_dir):
     
 if __name__ == "__main__":
     
-    raw_input("press enter to go")
+    #raw_input("press enter to go")
     
     test_dir = '../figs/test'
     emu_dir = '../figs/emu'
     boa2_dir = '../figs/boa2'
     out_dirs = [test_dir, emu_dir, boa2_dir]
     
-    run_index = 0
+    run_index = 2
     run_dir = out_dirs[run_index]
         
         
-    run_test(run_dir)
-    
+    #run_test_data(run_dir)
+    {0:run_test_data, 1:run_emulated_data, 2:run_boa2_data}[run_index](run_dir)
     
     cp_str = 'cp {}/dstream_streaming* {}/anim'.format(run_dir, run_dir)
     subprocess.call(cp_str, shell=True)    
