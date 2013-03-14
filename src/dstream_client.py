@@ -5,6 +5,8 @@
 sys.path.append('libs/networkx-1.7-py2.7.egg')'''
 import sys
 sys.path.append('/home/octavian/github/dstream/src')
+sys.path.append('/home/octavian/github/utils/src')
+from utils import Utils
 from dstream import DStreamClusterer
 import numpy as np
 import subprocess
@@ -170,8 +172,20 @@ def pngs_to_gif(pngs_str, gif_str, delay=100):
    
     subprocess.call(["convert"] + params + [pngs_str,gif_str], shell=True)    
     
+def run_emulated_data():
+    metricDataMatrix, columnNamesVector, timesVector = Utils.get_emu_data()
+    
+
+def run_boa2_data():
+    allMEIds, perMEData, perMEMetricNames, perMETimes = Utils.get_boa2_data()
+    MEId_of_interest = '536282'
+    
+def run_test():
+    pass
+    
 if __name__ == "__main__":
     
+    raw_input("press start to go")
     means_count = 3
     test_data_size = 20000
     display_times = 1
