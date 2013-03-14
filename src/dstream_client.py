@@ -173,7 +173,7 @@ def pngs_to_gif(pngs_str, gif_str, delay=100):
    
     subprocess.call(["convert"] + params + [pngs_str,gif_str], shell=True)    
     
-def run_clusterer(x, y, out_dir, total_plots = 10, needs_scale=True):
+def run_clusterer(x, y, out_dir, total_plots = 10, needs_scale=True, partitions=(10, 10), c_m = 3.0, c_l = 0.8, beta = 0.3, decay = .998):
     '''
     dense_threshold_parameter = 3.0,#3.0, #C_m
                  sparse_threshold_parameter = 0.8,#0.8,  #C_l
@@ -185,21 +185,26 @@ def run_clusterer(x, y, out_dir, total_plots = 10, needs_scale=True):
                  initial_cluster_count = 4,
                  seed = 331
     '''    
-    c_m = 3.0
-    c_l = 0.8
-    beta = 0.3
-    decay = 0.998
+    #c_m = 3.0
+    #c_l = 0.8
+    #beta = 0.3
+    #decay = 0.998
     dims = 2
     domains = ((0.0, 100.0), (0.0, 100.0))
-    partitions = (10, 10)
+    #partitions = (10, 10)
     cluster_count_init = 4
     seed = 331
     
     d_stream_clusterer = DStreamClusterer(c_m, c_l, beta, decay, dims, domains, partitions, cluster_count_init, seed)
     
     if needs_scale:
-        x = Utils.scale_vector(x, 100.0, True)
-        y = Utils.scale_vector(y, 100.0, True)
+        
+        x_scalar = 100.0/np.max(x)
+        y_scalar = 100.0/np.max(y)
+        print 'scaling by {} {}'.format(x_scalar, y_scalar)
+        x = Utils.scale_vector(x, x_scalar, False)
+        y = Utils.scale_vector(y, y_scalar,  False)
+    Utils.show_scatter(x, y, 'all presampled data')
                 
     data_size = x.size
     plot_count = 1
@@ -209,7 +214,9 @@ def run_clusterer(x, y, out_dir, total_plots = 10, needs_scale=True):
     
     for i in range(data_size):
         #print 'data {} of total {}'.format(i+1, data_size)
+        #print x[i], y[i]
         if x[i] <= 100.0 and x[i] >= 0.0 and y[i] <= 100.0 and y[i] >= 0.0:
+            #print 'adding ', x[i], y[i]
             d_stream_clusterer.add_datum((x[i], y[i]))
         
         if has_not_clustered == True:
@@ -254,14 +261,14 @@ def run_boa2_data(out_dir):
     
     print 'size of {} is {}, size of {} is {} (load)'.format(metric_name, metric_data.size, load_name, load_data.size)
     
-    Utils.show_scatter(load_data, metric_data, 'boa2 data')
+    #Utils.show_scatter(load_data, metric_data, 'boa2 data')
     
-    run_clusterer(load_data, metric_data, out_dir, 20, True)
+    run_clusterer(load_data, metric_data, out_dir, 10, True, (10, 10))#,c_m = 1.5, c_l = 0.4, beta = 0.8, decay = .998)
     
 def run_test_data(out_dir):
     means_count = 3
     test_data_size = 20000
-    display_times = 1
+    
     
     x_domain = (0.0, 100.0)
     y_domain = (0.0, 100.0)
@@ -303,8 +310,8 @@ def run_test_data(out_dir):
     #print cluster_test_data
     #ClusterDisplay2D.display_ref_data(cluster_test_data, par/tions_per_domain)
 
-    Utils.show_scatter(cluster_test_data_exp[:, 0], cluster_test_data_exp[:, 1], 'all presampled data')
-    run_clusterer(cluster_test_data_exp[:, 0], cluster_test_data_exp[:,1], out_dir, 24, False)
+    #Utils.show_scatter(cluster_test_data_exp[:, 0], cluster_test_data_exp[:, 1], 'all presampled data')
+    run_clusterer(cluster_test_data_exp[:, 0], cluster_test_data_exp[:,1], out_dir, 24, False, partitions_per_domain)
     
 if __name__ == "__main__":
     
