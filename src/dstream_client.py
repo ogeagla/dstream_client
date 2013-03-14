@@ -38,6 +38,7 @@ class ClusterDisplay2D():
         fig = plt.figure()
         ax = fig.add_subplot(111)
         if plot_count is not None:
+            #print ref_data.shape, plot_count
             plot_info = '_' +str(plot_count[0]).zfill(len(str(plot_count[1])))+ '_of_' + str(plot_count[1]) + '_t=' + str(ref_data[:,0].size)
         else:
             plot_info = '_t=' + str(ref_data[:,0].size)
@@ -172,6 +173,61 @@ def pngs_to_gif(pngs_str, gif_str, delay=100):
    
     subprocess.call(["convert"] + params + [pngs_str,gif_str], shell=True)    
     
+def run_clusterer(x, y, out_dir, total_plots = 10, needs_scale=True):
+    '''
+    dense_threshold_parameter = 3.0,#3.0, #C_m
+                 sparse_threshold_parameter = 0.8,#0.8,  #C_l
+                 sporadic_threshold_parameter = 0.3,#0.3, #beta
+                 decay_factor = 0.998,#0.998, #lambda
+                 dimensions = 2, 
+                 domains_per_dimension = ((0.0, 100.0), (0.0, 100.0)),
+                 partitions_per_dimension = (5, 5),
+                 initial_cluster_count = 4,
+                 seed = 331
+    '''    
+    c_m = 3.0
+    c_l = 0.8
+    beta = 0.3
+    decay = 0.998
+    dims = 2
+    domains = ((0.0, 100.0), (0.0, 100.0))
+    partitions = (10, 10)
+    cluster_count_init = 4
+    seed = 331
+    
+    d_stream_clusterer = DStreamClusterer(c_m, c_l, beta, decay, dims, domains, partitions, cluster_count_init, seed)
+    
+    if needs_scale:
+        x = Utils.scale_vector(x, 100.0, True)
+        y = Utils.scale_vector(y, 100.0, True)
+                
+    data_size = x.size
+    plot_count = 1
+    #print data_size, total_plots
+    display_times = data_size/total_plots
+    has_not_clustered = True
+    
+    for i in range(data_size):
+        #print 'data {} of total {}'.format(i+1, data_size)
+        if x[i] <= 100.0 and x[i] >= 0.0 and y[i] <= 100.0 and y[i] >= 0.0:
+            d_stream_clusterer.add_datum((x[i], y[i]))
+        
+        if has_not_clustered == True:
+            if d_stream_clusterer.has_clustered_once == True:
+                print 'clustering intialized!'
+                has_not_clustered = False
+                ClusterDisplay2D.display_all(d_stream_clusterer.grids, d_stream_clusterer.class_keys, d_stream_clusterer.data, d_stream_clusterer.partitions_per_dimension, d_stream_clusterer.domains_per_dimension, 'initial clusters', out_dir)
+    
+        if np.mod(i+1, display_times) == 0:
+            #print 'time to plot'
+            ClusterDisplay2D.display_all(d_stream_clusterer.grids, d_stream_clusterer.class_keys, d_stream_clusterer.data, d_stream_clusterer.partitions_per_dimension, d_stream_clusterer.domains_per_dimension, 'streaming', out_dir, (plot_count, total_plots))
+            print i, '/', data_size
+            plot_count += 1
+            
+    ClusterDisplay2D.display_all(d_stream_clusterer.grids, d_stream_clusterer.class_keys, d_stream_clusterer.data, d_stream_clusterer.partitions_per_dimension, d_stream_clusterer.domains_per_dimension, 'final clusters', out_dir)
+    
+    
+    
 def run_emulated_data():
     metricDataMatrix, columnNamesVector, timesVector = Utils.get_emu_data()
     
@@ -179,6 +235,12 @@ def run_emulated_data():
 def run_boa2_data():
     allMEIds, perMEData, perMEMetricNames, perMETimes = Utils.get_boa2_data()
     MEId_of_interest = '536282'
+    
+    run_index = allMEIds.index(MEId_of_interest)
+    run_data = perMEData[run_index]
+    run_names = perMEMetricNames[run_index]
+    run_times = perMETimes[run_index]
+    
     
 def run_test(out_dir):
     means_count = 3
@@ -224,39 +286,13 @@ def run_test(out_dir):
         
     #print cluster_test_data
     #ClusterDisplay2D.display_ref_data(cluster_test_data, par/tions_per_domain)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title('all presampled data')
-    scat = ax.scatter(cluster_test_data_exp[:, 0], cluster_test_data_exp[:, 1])
-    plt.show()
-    
 
-    d_stream_clusterer = DStreamClusterer(3.0, 0.8, 0.3, 0.998, 2, (x_domain, y_domain), partitions_per_domain)
-    
-    
-    plot_count = 1
-    total_plots = 24
-    display_times = test_data_size/total_plots#d_stream_clusterer.gap_time * 1000
-    for i in range(test_data_size):
- 
-        x = cluster_test_data_exp[i, 0]
-    
-        y = cluster_test_data_exp[i, 1]
-        
-        if x <= 100.0 and x >= 0.0 and y <= 100.0 and y >= 0.0:
-            d_stream_clusterer.add_datum((x, y))
-        else:
-            continue
-        
-        if np.mod(i, display_times) == 0 and i > 0:
-            ClusterDisplay2D.display_all(d_stream_clusterer.grids, d_stream_clusterer.class_keys, d_stream_clusterer.data, d_stream_clusterer.partitions_per_dimension, d_stream_clusterer.domains_per_dimension, 'streaming', out_dir, (plot_count, total_plots))
-            print i, '/', test_data_size
-            plot_count += 1
-    ClusterDisplay2D.display_all(d_stream_clusterer.grids, d_stream_clusterer.class_keys, d_stream_clusterer.data, d_stream_clusterer.partitions_per_dimension, d_stream_clusterer.domains_per_dimension, 'final clusters', out_dir)
+    Utils.show_scatter(cluster_test_data_exp[:, 0], cluster_test_data_exp[:, 1], 'all presampled data')
+    run_clusterer(cluster_test_data_exp[:, 0], cluster_test_data_exp[:,1], out_dir, 24, False)
     
 if __name__ == "__main__":
     
-    raw_input("press start to go")
+    raw_input("press enter to go")
     
     test_dir = '../figs/test'
     emu_dir = '../figs/emu'
