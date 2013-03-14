@@ -7,11 +7,10 @@ import sys
 sys.path.append('/home/octavian/github/dstream/src')
 from dstream import DStreamClusterer
 import numpy as np
-import random
-import networkx as nx
+import subprocess
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-import copy
+
 
 class ClusterDisplay2D():
 
@@ -82,7 +81,7 @@ class ClusterDisplay2D():
             
             ax.scatter(x, y, marker = mark, c = class_color, s=grid.density*10, linewidths = 0.1,label= ' ' + str(class_key))
         if save:
-            plt.savefig('../figs/dstream' + '_' + plot_name + plot_info + '.png', bbox_inches = 0)
+            plt.savefig('../figs/out/dstream' + '_' + plot_name + plot_info + '.png', bbox_inches = 0)
             #plt.savefig(filename + '.pdf', bbox_inches = 0)
         #leg = ax.legend(loc=2)
 class NMeanSampler2D():
@@ -172,9 +171,7 @@ def pngs_to_gif(pngs_str, gif_str, delay=100):
     subprocess.call(["convert"] + params + [pngs_str,gif_str], shell=True)    
     
 if __name__ == "__main__":
-    import subprocess
-    subprocess.call(["convert", "-delay", "100", "../figs/anim/*.png", "../figs/anim/anim_py.gif"])
-    raw_input()
+    
     means_count = 3
     test_data_size = 20000
     display_times = 1
@@ -246,7 +243,8 @@ if __name__ == "__main__":
             print i, '/', test_data_size
             plot_count += 1
     ClusterDisplay2D.display_all(d_stream_clusterer.grids, d_stream_clusterer.class_keys, d_stream_clusterer.data, d_stream_clusterer.partitions_per_dimension, d_stream_clusterer.domains_per_dimension, 'final clusters', True)
-    
+    subprocess.call('cp ../figs/out/dstream_streaming* ../figs/anim', shell=True)    
+    subprocess.call(["convert", "-delay", "100", "../figs/anim/*.png", "../figs/anim/anim_py.gif"])
     '''plt.show()'''
     
     
