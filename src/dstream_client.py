@@ -18,7 +18,7 @@ class ClusterDisplay2D():
 
 
     @staticmethod
-    def display_all(grids, class_keys, ref_data, partitions_per_dimension, domains_per_dimension, plot_name='dstream', save=False, plot_count=None):
+    def display_all(grids, class_keys, ref_data, partitions_per_dimension, domains_per_dimension, plot_name='dstream', save_dir=None, plot_count=None):
         class_key_colors = {}
         color_map = cm.get_cmap('hsv') 
         for i in range(class_keys.size):
@@ -82,8 +82,8 @@ class ClusterDisplay2D():
                 mark = 'x'
             
             ax.scatter(x, y, marker = mark, c = class_color, s=grid.density*10, linewidths = 0.1,label= ' ' + str(class_key))
-        if save:
-            plt.savefig('../figs/out/dstream' + '_' + plot_name + plot_info + '.png', bbox_inches = 0)
+        if save_dir != None:
+            plt.savefig(save_dir + '/dstream' + '_' + plot_name + plot_info + '.png', bbox_inches = 0)
             #plt.savefig(filename + '.pdf', bbox_inches = 0)
         #leg = ax.legend(loc=2)
 class NMeanSampler2D():
@@ -180,12 +180,7 @@ def run_boa2_data():
     allMEIds, perMEData, perMEMetricNames, perMETimes = Utils.get_boa2_data()
     MEId_of_interest = '536282'
     
-def run_test():
-    pass
-    
-if __name__ == "__main__":
-    
-    raw_input("press start to go")
+def run_test(out_dir):
     means_count = 3
     test_data_size = 20000
     display_times = 1
@@ -231,6 +226,7 @@ if __name__ == "__main__":
     #ClusterDisplay2D.display_ref_data(cluster_test_data, par/tions_per_domain)
     fig = plt.figure()
     ax = fig.add_subplot(111)
+    ax.set_title('all presampled data')
     scat = ax.scatter(cluster_test_data_exp[:, 0], cluster_test_data_exp[:, 1])
     plt.show()
     
@@ -253,12 +249,32 @@ if __name__ == "__main__":
             continue
         
         if np.mod(i, display_times) == 0 and i > 0:
-            ClusterDisplay2D.display_all(d_stream_clusterer.grids, d_stream_clusterer.class_keys, d_stream_clusterer.data, d_stream_clusterer.partitions_per_dimension, d_stream_clusterer.domains_per_dimension, 'streaming', True, (plot_count, total_plots))
+            ClusterDisplay2D.display_all(d_stream_clusterer.grids, d_stream_clusterer.class_keys, d_stream_clusterer.data, d_stream_clusterer.partitions_per_dimension, d_stream_clusterer.domains_per_dimension, 'streaming', out_dir, (plot_count, total_plots))
             print i, '/', test_data_size
             plot_count += 1
-    ClusterDisplay2D.display_all(d_stream_clusterer.grids, d_stream_clusterer.class_keys, d_stream_clusterer.data, d_stream_clusterer.partitions_per_dimension, d_stream_clusterer.domains_per_dimension, 'final clusters', True)
-    subprocess.call('cp ../figs/out/dstream_streaming* ../figs/anim', shell=True)    
-    subprocess.call(["convert", "-delay", "100", "../figs/anim/*.png", "../figs/anim/anim_py.gif"])
+    ClusterDisplay2D.display_all(d_stream_clusterer.grids, d_stream_clusterer.class_keys, d_stream_clusterer.data, d_stream_clusterer.partitions_per_dimension, d_stream_clusterer.domains_per_dimension, 'final clusters', out_dir)
+    
+if __name__ == "__main__":
+    
+    raw_input("press start to go")
+    
+    test_dir = '../figs/test'
+    emu_dir = '../figs/emu'
+    boa2_dir = '../figs/boa2'
+    out_dirs = [test_dir, emu_dir, boa2_dir]
+    
+    run_index = 0
+    run_dir = out_dirs[run_index]
+        
+        
+    run_test(run_dir)
+    
+    
+    cp_str = 'cp {}/dstream_streaming* {}/anim'.format(run_dir, run_dir)
+    subprocess.call(cp_str, shell=True)    
+    pngs_str = '{}/anim/*.png'.format(run_dir)
+    gif_str = '{}/anim/anim_py.gif'.format(run_dir)
+    subprocess.call(["convert", "-delay", "100", pngs_str, gif_str])
     '''plt.show()'''
     
     
