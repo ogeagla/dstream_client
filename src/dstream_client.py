@@ -263,7 +263,7 @@ def run_boa2_data(out_dir):
     
     #Utils.show_scatter(load_data, metric_data, 'boa2 data')
     
-    run_clusterer(load_data, metric_data, out_dir, 10, True, (10, 10))#,c_m = 1.5, c_l = 0.4, beta = 0.8, decay = .998)
+    run_clusterer(load_data, metric_data, out_dir, 10, True, (12, 12))#,c_m = 1.5, c_l = 0.4, beta = 0.8, decay = .998)
     
 def run_test_data(out_dir):
     means_count = 3
